@@ -135,7 +135,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 - (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated {
     self.selfCanScroll = YES;
     self.subCanScroll = NO;
-    if (contentOffset.y <= self.tableHeaderView.frame.size.height) {
+    if (contentOffset.y <= self._criticlalOffset) {
         [self resetSubScrollViewsContentOffset];
     }
     
@@ -158,7 +158,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 }
 
 - (void)menuScrollToTop:(BOOL)animated {
-    [self setContentOffset:CGPointMake(0, self.tableHeaderView.frame.size.height) animated:animated];
+    [self setContentOffset:CGPointMake(0, self._criticlalOffset) animated:animated];
 }
 
 - (void)allowHorizaontalScrollEnabled:(BOOL)scrollEnabled {
@@ -202,11 +202,15 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 }
 
 - (void)adjustContentViewOffset {
-    if (self.contentOffset.y >= self.tableHeaderView.frame.size.height) {
+    if (self.contentOffset.y >= self._criticlalOffset) {
         return;
     }
     [self reloadData];
     [self resetSubScrollViewsContentOffset];
+}
+
+- (CGFloat)_criticlalOffset {
+    return self.tableHeaderView.frame.size.height - self.customHoverTopMargin;
 }
 
 - (void)resetHeaderView {
@@ -293,8 +297,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         return;
     }
     
-    CGFloat cirticalContentOffset = self.tableHeaderView.frame.size.height;
-    cirticalContentOffset -= self.customHoverTopMargin;
+    CGFloat cirticalContentOffset = self._criticlalOffset;
     
     if (scrollView.contentOffset.y >= cirticalContentOffset) {
         scrollView.contentOffset = CGPointMake(0, cirticalContentOffset);
