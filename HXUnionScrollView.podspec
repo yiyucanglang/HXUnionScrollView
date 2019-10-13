@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'HXUnionScrollView'
-  s.version          = '1.0.3'
+  s.version          = '1.0.4'
   s.summary          = '联动滑动悬停控件'
 
   s.homepage         = 'https://github.com/yiyucanglang'
@@ -12,6 +12,8 @@ Pod::Spec.new do |s|
   s.static_framework = true
   
   s.dependency 'Masonry'
+  s.dependency 'HXConvenientListView/Core'
   s.public_header_files = '*{h}'
   s.source_files = '*.{h,m}'
+  
  end

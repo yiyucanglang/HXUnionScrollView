@@ -16,6 +16,11 @@ typedef NS_ENUM(NSInteger, SliderStyle) {
     SliderStyleFlex
 };
 
+typedef NS_ENUM(NSInteger, UnionScrollViewSwipeDirection) {
+    UnionScrollViewSwipeDirection_Left,
+    UnionScrollViewSwipeDirection_Right
+};
+
 @protocol HXIndicatorMenuViewDelegate;
 @protocol HXUpDownUnionScrollViewMenuViewDelegate <NSObject>
 
@@ -36,6 +41,13 @@ typedef NS_ENUM(NSInteger, SliderStyle) {
 
 @protocol HXIndicatorMenuViewDelegate<NSObject>
 - (void)indicatorMenuView:(UIView<HXUpDownUnionScrollViewMenuViewDelegate> *)indicatorMenuView didSelectedIndex:(NSInteger)index animated:(BOOL)animated;
+@end
+
+
+@protocol HXCommonIndicatorMenuItemViewDeleagte <NSObject>
+
+- (void)updateColor:(UIColor *)color scale:(CGFloat)scale;
+
 @end
 
 

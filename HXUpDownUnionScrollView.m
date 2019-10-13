@@ -42,19 +42,24 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 @property (nonatomic, assign) NSInteger           quickSwipeBeginPageIndex;
 @property (nonatomic, strong) NSMutableArray *scrollViewsArr;
 @property (nonatomic, strong) NSMutableArray *vcsArr;
-@property (nonatomic, assign) BOOL  selfCanScroll;
-@property (nonatomic, assign) BOOL  subCanScroll;
 
 @property (nonatomic, weak) UIViewController *associatedVC;
 
 @property (nonatomic, assign) CGFloat customHoverTopMargin;
 
-
 @end
 @implementation HXUpDownUnionScrollView
 #pragma mark - Life Cycle
 - (instancetype)initWithHXDataSource:(id<HXUpDownUnionScrollViewDataSource>)hxdataSource hxDelegate:(id<HXUpDownUnionScrollViewDelegate>)hxdelegate associatedViewController:(nonnull UIViewController *)associatedViewController {
-    if (self = [super init]) {
+    if (self = [super initWithFrame:CGRectZero]) {
+        
+        self.showsVerticalScrollIndicator   = NO;
+        self.showsHorizontalScrollIndicator = NO;
+        self.quickSwipeBeginPageIndex       = -1;
+        self.currentPageIndex               = 0;
+        self.dataSource                     = self;
+        self.delegate                       = self;
+        
         self.hxdataSource = hxdataSource;
         self.hxdelegate   = hxdelegate;
         self.associatedVC = associatedViewController;
@@ -69,24 +74,11 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     return self;
 }
 
-- (instancetype)initWithFrame:(CGRect)frame {
-    if (self = [super initWithFrame:frame]) {
-        self.showsVerticalScrollIndicator   = NO;
-        self.showsHorizontalScrollIndicator = NO;
-        self.quickSwipeBeginPageIndex       = -1;
-        self.currentPageIndex               = 0;
-        self.selfCanScroll                  = YES;
-        self.dataSource                     = self;
-        self.delegate                       = self;
-    }
-    return self;
-}
 #pragma mark - System Method
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
     if ([gestureRecognizer isKindOfClass:UIPanGestureRecognizer.class] &&
         [otherGestureRecognizer isKindOfClass:UIPanGestureRecognizer.class])
     {
-
         CGPoint velocity = [(UIPanGestureRecognizer *)gestureRecognizer velocityInView:gestureRecognizer.view];
 
         // 判断是否垂直滚动
@@ -101,25 +93,23 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     if (context == &HXHoverPageViewContentOffsetContext)
     {
+        
         NSValue *oldvalue   = change[NSKeyValueChangeOldKey];
         NSValue *newvalue   = change[NSKeyValueChangeNewKey];
         CGFloat oldoffset_y = oldvalue.UIOffsetValue.vertical;
         CGFloat newoffset_y = newvalue.UIOffsetValue.vertical;
-        if (oldoffset_y == newoffset_y) {
+        
+        if (oldoffset_y == newoffset_y && self.bounces != NO) {
             return;
         }
-        HXLog(@"kvo before: subCanScroll:%@ selfCanScroll:%@", @(self.subCanScroll), @(self.selfCanScroll));
-        UIScrollView *view = object;
-        if (!self.subCanScroll) {
-            view.contentOffset = CGPointZero;
+        
+        UIScrollView *scrollView = object;
+        if (self.contentOffset.y < self._criticlalOffset) {
+            scrollView.contentOffset = CGPointZero;
+        }else {
+            self.contentOffset = CGPointMake(0, self._criticlalOffset);
         }
-        if (view.contentOffset.y <= 0) {
-            self.subCanScroll = NO;
-            
-            view.contentOffset = CGPointZero;
-            self.selfCanScroll = YES;
-        }
-        HXLog(@"kvo after: subCanScroll:%@ selfCanScroll:%@", @(self.subCanScroll), @(self.selfCanScroll));
+        
     }
     else if ([keyPath isEqualToString:@"frame"]) {
         [self resetHeaderView];
@@ -129,12 +119,21 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 - (void)willMoveToSuperview:(UIView *)newSuperview {
     if (newSuperview) {
         [self createHeaderView];
+        if (self.outerHighPriorityGestureRecognizer) {
+            [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:self.outerHighPriorityGestureRecognizer];
+        }
+        else {
+            UIGestureRecognizer *defautGesture = self.associatedVC.navigationController.interactivePopGestureRecognizer;
+            self.outerHighPriorityGestureRecognizer = defautGesture;
+            if (defautGesture) {
+                [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:defautGesture];
+            }
+            
+        }
     }
 }
 
 - (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated {
-    self.selfCanScroll = YES;
-    self.subCanScroll = NO;
     if (contentOffset.y <= self._criticlalOffset) {
         [self resetSubScrollViewsContentOffset];
     }
@@ -171,9 +170,12 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         [self.tableHeaderView removeObserver:self forKeyPath:@"frame"];
         self.addHeadFrameObserver = NO;
     }
-    self.tableHeaderView = [self.hxdataSource headViewInUpDownUnionScrollView:self];
-    [self.tableHeaderView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew context:nil];
-    self.addHeadFrameObserver = YES;
+    
+    if([self.hxdataSource respondsToSelector:@selector(headViewInUpDownUnionScrollView:)]) {
+        self.tableHeaderView = [self.hxdataSource headViewInUpDownUnionScrollView:self];
+        [self.tableHeaderView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew context:nil];
+        self.addHeadFrameObserver = YES;
+    }
 }
 
 - (void)getVCsFromDataSource {
@@ -228,6 +230,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 }
 
 - (void)collectionViewContentOffsetDidChanged:(CGPoint)contentOffset {
+    
     CGFloat ratio = contentOffset.x/self.horizontalCollectionView.bounds.size.width;
     NSInteger num = [self.hxdataSource numberOfViewInUpDownUnionScrollView:self];
     ratio = MAX(0, MIN(num - 1, ratio));
@@ -243,6 +246,9 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
             if (ratio < self.currentPageIndex) {
                 targetIndex = baseIndex + 1;
             }
+            
+            [self.menuView selectItem:targetIndex animated:NO];
+            
             if (self.quickSwipeBeginPageIndex < 0) {
                 self.quickSwipeBeginPageIndex = self.currentPageIndex;
             }
@@ -287,6 +293,18 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     return self.menuView;
 }
 
+
+//noti: the two method below is the key of swipe smoothly like silk
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    return 1;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    UIView *footer = [[UIView alloc] initWithFrame:CGRectZero];
+    footer.backgroundColor = [UIColor clearColor];
+    return footer;
+}
+
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     
     if ([scrollView isEqual:self.horizontalCollectionView]) {
@@ -299,17 +317,19 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     
     CGFloat cirticalContentOffset = self._criticlalOffset;
     
-    if (scrollView.contentOffset.y >= cirticalContentOffset) {
-        scrollView.contentOffset = CGPointMake(0, cirticalContentOffset);
-        if (self.selfCanScroll) {
-            self.selfCanScroll = NO;
-            self.subCanScroll  = YES;
-        }
-    }else{
-        if (!self.selfCanScroll) {//子视图没到顶部
-            scrollView.contentOffset = CGPointMake(0, cirticalContentOffset);
-        }
+    UIScrollView *currentSubScrollView = [self.hxdataSource coreScrollViewInUpDownUnionScrollView:self viewAtIndex:self.currentPageIndex];
+    if (currentSubScrollView != nil && currentSubScrollView.contentOffset.y > 0) {
+        self.contentOffset = CGPointMake(0, cirticalContentOffset);
     }
+    
+    if (scrollView.contentOffset.y < cirticalContentOffset) {
+        currentSubScrollView.contentOffset = CGPointZero;
+    }
+    
+    if (scrollView.contentOffset.y > cirticalContentOffset && currentSubScrollView.contentOffset.y == 0) {
+        self.contentOffset = CGPointMake(0, cirticalContentOffset);
+    }
+    
     if ([self.hxdelegate respondsToSelector:@selector(upDownUnionScrollView:contentOffsetY:allowMaximumContentOffsetY:)]) {
         [self.hxdelegate upDownUnionScrollView:self contentOffsetY:self.contentOffset.y allowMaximumContentOffsetY:cirticalContentOffset];
     }
@@ -419,20 +439,11 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         _horizontalCollectionView.pagingEnabled                  = YES;
         _horizontalCollectionView.showsHorizontalScrollIndicator = NO;
         _horizontalCollectionView.scrollsToTop                   = NO;
-        if (self.outerHighPriorityGestureRecognizer) {
-            [_horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:self.outerHighPriorityGestureRecognizer];
-        }
-        else {
-            UIGestureRecognizer *defautGesture = self.associatedVC.navigationController.interactivePopGestureRecognizer;
-            if (defautGesture) {
-                [_horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:defautGesture];
-            }
-            
-        }
         
     }
     return _horizontalCollectionView;
 }
+
 
 - (UIView<HXUpDownUnionScrollViewMenuViewDelegate> *)menuView {
     if (!_menuView ) {
@@ -542,4 +553,5 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         [self.tableHeaderView removeObserver:self forKeyPath:@"frame"];
     }
 }
+
 @end

@@ -27,7 +27,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithHXDataSource:(id<HXUpDownUnionScrollViewDataSource>)hxdataSource
                           hxDelegate:(id<HXUpDownUnionScrollViewDelegate>)hxdelegate
-            associatedViewController:(UIViewController *)associatedViewController;
+            associatedViewController:(UIViewController *)associatedViewController NS_DESIGNATED_INITIALIZER;
+
++ (instancetype)new NS_UNAVAILABLE;
+
+- (instancetype)init NS_UNAVAILABLE;
+
+- (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
+
+- (instancetype)initWithCoder:(NSCoder *)aDecoder NS_UNAVAILABLE;
 
 /**
  *  手动控制滚动到某个视图
@@ -50,19 +58,21 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (UIScrollView *)coreScrollViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView viewAtIndex:(NSInteger)index;
 
-#pragma mark headView
-- (UIView *)headViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
 - (CGFloat)menuHeightInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
 
 @optional
+
+#pragma mark headView
+- (UIView *)headViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
+
 //默认0
 - (CGFloat)customHoverTopMarginInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 /**
  系统方法（系统默认返回yes）该方法详细知识自行查阅文档
 
- @return  yes HXUpDownUnionScrollView接管子vc AppearanceMethods方法调用 no 遵循系统默认
+ @return  NO:HXUpDownUnionScrollView接管子vc AppearanceMethods方法调用; YES:遵循系统默认
  */
 - (BOOL)shouldAutomaticallyForwardAppearanceMethods;
 
