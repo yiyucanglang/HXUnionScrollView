@@ -22,6 +22,7 @@
 @property (nonatomic, strong) UIView         *bottomLine;
 
 @property (nonatomic, assign) NSInteger      currentIndex;
+
 @end
 
 
@@ -57,6 +58,9 @@
         CGRect  btnTitleFrame = [self convertRect:btn.titleLabel.frame fromView:btn];
         if (btnTitleFrame.size.width <= 0 ) {
             return;
+        }
+        if (self.sliderStyle == SliderStyleEqualMenuItem) {
+            self.sliderWidth = btnTitleFrame.size.width;
         }
         self.sliderView.frame = CGRectMake(btnTitleFrame.origin.x - (self.sliderWidth - btnTitleFrame.size.width)/2, self.frame.size.height - self.sliderBottomMargin, self.sliderWidth, self.sliderHeight);
         self.sliderView.layer.cornerRadius = self.sliderCornerRadius;
@@ -119,6 +123,19 @@
         
         if (self.sliderStyle == SliderStyleNormal) {
             targetX = [HXIndicatorMenuView interpolationFrom:leftX to:rightX percent:ratio];
+        }
+        else if (self.sliderStyle == SliderStyleEqualMenuItem) {
+            
+            //fix sliderView wrong position because of swipe very quickly
+            if (ratio >= 0.91) {
+                ratio = 1;
+            }
+            else if(ratio <= 0.09) {
+                ratio = 0;
+            }
+            
+            targetWidth = [HXIndicatorMenuView interpolationFrom:leftBtnTitleFrame.size.width to:rightBtnTitleFrame.size.width percent:ratio];
+            targetX = [HXIndicatorMenuView interpolationFrom:leftBtnTitleFrame.origin.x to:rightBtnTitleFrame.origin.x percent:ratio];
         }
         else  {
             CGFloat maxWidth = rightX - leftX + rightWidth;
@@ -221,8 +238,14 @@
     [UIView animateWithDuration:duration animations:
      ^{
          CGRect targetFrame = self.sliderView.frame;
+         if (self.sliderStyle == SliderStyleEqualMenuItem) {
+             targetFrame.size.width = btnTitleFrame.size.width;
+             self.sliderWidth = targetFrame.size.width;
+         }
+         
          targetFrame.origin.x = btnTitleFrame.origin.x - (self.sliderWidth - btnTitleFrame.size.width)/2;
          self.sliderView.frame = targetFrame;
+         
      }];
     
     if ([self.delegate respondsToSelector:@selector(indicatorMenuView:didSelectedIndex:animated:)]) {
@@ -274,6 +297,10 @@
         _sliderView.backgroundColor = self.sliderColor;
     }
     return _sliderView;
+}
+
+- (void)setHiddenBottomLine:(BOOL)hiddenBottomLine {
+    self.bottomLine.hidden = hiddenBottomLine;
 }
 
 #pragma mark - Dealloc

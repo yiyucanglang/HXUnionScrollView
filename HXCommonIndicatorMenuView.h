@@ -53,9 +53,6 @@ typedef NS_ENUM(NSInteger, HXIndicatorMenuLayoutStyle) {
 //default 12
 - (CGFloat)interitemSpacingInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
 
-//whether divide the menu's item  when menu's contentsize.width < frame.size.width  default yes
-- (BOOL)averageCellSpacingEnabledInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
-
 //default 1.0(no scale)
 - (CGFloat)menuItemScaleFacorInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
 

@@ -17,7 +17,8 @@
 
 #endif
 
-
+static NSString *kViewControllerKey            = @"kViewControllerKey";
+static NSString *kScrollViewKey                = @"kScrollViewKey";
 
 static NSString *kPagingCellIdentifier            = @"kPagingCellIdentifier";
 static NSInteger kCellTag = 9527;
@@ -43,9 +44,13 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 @property (nonatomic, strong) NSMutableArray *scrollViewsArr;
 @property (nonatomic, strong) NSMutableArray *vcsArr;
 
+@property (nonatomic, strong) NSMutableArray *viewDataSourceArr;
+
 @property (nonatomic, weak) UIViewController *associatedVC;
 
 @property (nonatomic, assign) CGFloat customHoverTopMargin;
+
+@property (nonatomic, strong) UIView  *currentHeadView;
 
 @end
 @implementation HXUpDownUnionScrollView
@@ -68,7 +73,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         if ([self.hxdataSource respondsToSelector:@selector(customHoverTopMarginInUpDownUnionScrollView:)]) {
             self.customHoverTopMargin = MAX(0, [self.hxdataSource customHoverTopMarginInUpDownUnionScrollView:self]);
         }
-        [self getVCsFromDataSource];
+        [self _storeViewData];
         [self addScrollViewsObserver];
     }
     return self;
@@ -112,7 +117,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         
     }
     else if ([keyPath isEqualToString:@"frame"]) {
-        [self resetHeaderView];
+        [self reloadHeadView];
     }
 }
 
@@ -167,22 +172,30 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 #pragma mark - Private Method
 - (void)createHeaderView {
     if (self.addHeadFrameObserver) {
-        [self.tableHeaderView removeObserver:self forKeyPath:@"frame"];
+        [self.currentHeadView removeObserver:self forKeyPath:@"frame"];
         self.addHeadFrameObserver = NO;
     }
     
     if([self.hxdataSource respondsToSelector:@selector(headViewInUpDownUnionScrollView:)]) {
-        self.tableHeaderView = [self.hxdataSource headViewInUpDownUnionScrollView:self];
+        self.currentHeadView = [self.hxdataSource headViewInUpDownUnionScrollView:self];
+        
+        self.tableHeaderView = self.currentHeadView;
+        
         [self.tableHeaderView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew context:nil];
         self.addHeadFrameObserver = YES;
     }
 }
 
-- (void)getVCsFromDataSource {
+- (void)_storeViewData {
     NSInteger num = [self.hxdataSource numberOfViewInUpDownUnionScrollView:self];
     for (NSInteger i = 0; i < num; i++) {
-        UIViewController *vc = [self.hxdataSource viewControllerInUpDownUnionScrollView:self viewAtIndex:i];
-        [self.vcsArr addObject:vc];
+        
+        NSMutableDictionary *dic = [NSMutableDictionary dictionary];
+        [self.viewDataSourceArr addObject:dic];
+        if ([self.dataSource respondsToSelector:@selector(viewControllerInUpDownUnionScrollView:viewAtIndex:)]) {
+            dic[kViewControllerKey] = [self.hxdataSource viewControllerInUpDownUnionScrollView:self viewAtIndex:i];
+        }
+        dic[kScrollViewKey] = [self.hxdataSource coreScrollViewInUpDownUnionScrollView:self viewAtIndex:i];
     }
 }
 
@@ -215,7 +228,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     return self.tableHeaderView.frame.size.height - self.customHoverTopMargin;
 }
 
-- (void)resetHeaderView {
+- (void)reloadHeadView {
     [self createHeaderView];
     [self reloadData];
     [self resetSubScrollViewsContentOffset];
@@ -256,6 +269,16 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         }
         [self.menuView updateUIWithLeftIndex:baseIndex rightIndex:baseIndex+1 ratio:remainderRatio];
     }
+}
+
+- (UIViewController *)getVCAtIndex:(NSInteger)index {
+    NSDictionary *dic = self.viewDataSourceArr[index];
+    return dic[kViewControllerKey];
+}
+
+- (UIScrollView *)getScrollViewAtIndex:(NSInteger)index {
+    NSDictionary *dic = self.viewDataSourceArr[index];
+    return dic[kScrollViewKey];
 }
 
 #pragma mark - Delegate
@@ -334,6 +357,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         [self.hxdelegate upDownUnionScrollView:self contentOffsetY:self.contentOffset.y allowMaximumContentOffsetY:cirticalContentOffset];
     }
 }
+
 #pragma mark UITableViewDelegate
 #pragma mark UICollectionViewDataSource
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
@@ -342,7 +366,9 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    UIViewController *vc = self.vcsArr[indexPath.item];
+    UIViewController *vc = [self getVCAtIndex:indexPath.item];
+    UIScrollView     *scrollview = [self getScrollViewAtIndex:indexPath.item];
+    
     
     NSString *identifier = [NSString stringWithFormat:@"%@item_%@",kPagingCellIdentifier, @(indexPath.item)];
     [collectionView registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:identifier];
@@ -352,16 +378,26 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     UIView *content = (UIView *)([cell.contentView viewWithTag:kCellTag]);
     if(!content)
     {
-        [self.associatedVC addChildViewController:vc];
-        [cell.contentView addSubview:vc.view];
-        [vc.view mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.edges.equalTo(cell.contentView);
-        }];
-        vc.view.tag = kCellTag;
+        if (vc) {
+            [self.associatedVC addChildViewController:vc];
+            [cell.contentView addSubview:vc.view];
+            [vc.view mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.edges.equalTo(cell.contentView);
+            }];
+            vc.view.tag = kCellTag;
+        }
+        else {
+            [cell.contentView addSubview:scrollview];
+            [scrollview mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.edges.equalTo(cell.contentView);
+            }];
+            scrollview.tag = kCellTag;
+        }
+        
         
         if(indexPath.item == 0) {
             
-            if (![self.associatedVC shouldAutomaticallyForwardAppearanceMethods]) {
+            if (vc && ![self.associatedVC shouldAutomaticallyForwardAppearanceMethods]) {
                 UIViewController *appearVC = self.vcsArr[indexPath.item];
                 [appearVC beginAppearanceTransition:YES animated:YES];
                 [appearVC endAppearanceTransition];
@@ -404,11 +440,14 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         }
         
         if (![self.associatedVC shouldAutomaticallyForwardAppearanceMethods]) {
-            UIViewController *appearVC = self.vcsArr[index];
-            [appearVC beginAppearanceTransition:YES animated:YES];
+            UIViewController *appearVC = [self getVCAtIndex:index];
+            if (appearVC) {
+                [appearVC beginAppearanceTransition:YES animated:YES];
+            }
+            
             
             NSInteger disappearIndex = self.quickSwipeBeginPageIndex >= 0 ? self.quickSwipeBeginPageIndex : oldPageIndex;
-            UIViewController *disappearVC = self.vcsArr[disappearIndex];
+            UIViewController *disappearVC = [self getVCAtIndex:disappearIndex];
             [disappearVC beginAppearanceTransition:NO animated:YES];
             
             [appearVC endAppearanceTransition];
@@ -463,8 +502,9 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         if ([self.hxdataSource respondsToSelector:@selector(pageTitlesInUpDownUnionScrollView:)]) {
             titles = [self.hxdataSource pageTitlesInUpDownUnionScrollView:self];
         }
-        
-        NSAssert(titles.count, @"error:please implementation \"pageTitlesInUpDownUnionScrollView\" or return correct titles data");
+        if (!titles.count) {
+            return nil;
+        }
         
         UIColor *selectedColor = [UIColor redColor];
         if ([self.hxdataSource respondsToSelector:@selector(selectedMenuColorInUpDownUnionScrollView:)]) {
@@ -544,6 +584,13 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         _vcsArr = [[NSMutableArray alloc] init];
     }
     return _vcsArr;
+}
+
+- (NSMutableArray *)viewDataSourceArr {
+    if (!_viewDataSourceArr) {
+        _viewDataSourceArr = [[NSMutableArray alloc] init];
+    }
+    return _viewDataSourceArr;
 }
 
 #pragma mark - Dealloc

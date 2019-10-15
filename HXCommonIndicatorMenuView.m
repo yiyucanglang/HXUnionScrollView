@@ -39,7 +39,6 @@
 @property (nonatomic, assign) CGFloat   menuItemScaleFacor;
 @property (nonatomic, assign) CGFloat   edgeInsetLeft;
 @property (nonatomic, assign) CGFloat   interitemSpacing;
-@property (nonatomic, assign) BOOL      averageCellSpacingEnabled;
 
 @property (nonatomic, assign) HXIndicatorMenuLayoutStyle     layoutStyle;
 @property (nonatomic, copy) NSString  *customMenuItemViewClassStr;
@@ -95,9 +94,7 @@
     if ([self.menuDataSource respondsToSelector:@selector(sliderBottomMarginInHXCommonIndicatorMenuView:)]) {
         self.sliderBottomMargin = [self.menuDataSource sliderBottomMarginInHXCommonIndicatorMenuView:self];
     }
-    if ([self.menuDataSource respondsToSelector:@selector(averageCellSpacingEnabledInHXCommonIndicatorMenuView:)]) {
-        self.averageCellSpacingEnabled = [self.menuDataSource averageCellSpacingEnabledInHXCommonIndicatorMenuView:self];
-    }
+    
     if ([self.menuDataSource respondsToSelector:@selector(menuItemScaleFacorInHXCommonIndicatorMenuView:)]) {
         self.menuItemScaleFacor = [self.menuDataSource menuItemScaleFacorInHXCommonIndicatorMenuView:self];
     }
@@ -193,6 +190,11 @@
     
     
     self.sliderView.backgroundColor = self.sliderColor;
+    
+    if (self.sliderStyle == SliderStyleEqualMenuItem) {
+        self.sliderWidth = self.menuItemsArr[0].viewWidth;
+    }
+    
     self.sliderView.frame = CGRectMake(0, self.frame.size.height - self.sliderHeight - self.sliderBottomMargin, self.sliderWidth, self.sliderHeight);
     self.sliderView.layer.cornerRadius = self.sliderCornerRadius;
     
@@ -208,9 +210,11 @@
     newModel.selected = YES;
     
     [self.collectionView reloadData];
-    [newModel.collectionView scrollToItemAtIndexPath:newModel.indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
-    
     CGFloat duration = animated ? 0.35 : 0.0;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [newModel.collectionView scrollToItemAtIndexPath:newModel.indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:animated];
+    });
+    
     [UIView animateWithDuration:duration animations:
      ^{
          [self _moveSliderToAvailablePosition];
@@ -305,6 +309,18 @@
         if (self.sliderStyle == SliderStyleNormal) {
             targetX = [self interpolationFrom:leftX to:rightX percent:ratio];
         }
+        else if (self.sliderStyle == SliderStyleEqualMenuItem) {
+            
+            //fix sliderView wrong position because of swipe very quickly
+            if (ratio >= 0.91) {
+                ratio = 1;
+            }
+            else if(ratio <= 0.09) {
+                ratio = 0;
+            }
+            targetWidth = [self interpolationFrom:leftBtnTitleFrame.size.width to:rightBtnTitleFrame.size.width percent:ratio];
+            targetX = [self interpolationFrom:leftBtnTitleFrame.origin.x to:rightBtnTitleFrame.origin.x percent:ratio];
+        }
         else  {
             CGFloat maxWidth = rightX - leftX + rightWidth;
             //前50%，只增加width；后50%，移动x并减小width
@@ -337,7 +353,6 @@
     self.sliderBottomMargin = 0;
     self.sliderWidth = 44;
     self.sliderCornerRadius = 1;
-    self.averageCellSpacingEnabled = YES;
     self.menuItemScaleFacor = 1.0;
     self.edgeInsetLeft = 15;
     self.edgeInsetRight = 15;
@@ -353,6 +368,10 @@
     for (NSInteger i = 0; i < self.currentIndex; i++) {
         targetCellOriginX += self.menuItemsArr[i].viewWidth;
         targetCellOriginX += self.interitemSpacing;
+    }
+    
+    if (self.sliderStyle == SliderStyleEqualMenuItem) {
+        self.sliderWidth = targetCellWidth;
     }
     
     CGRect targetFrame = self.sliderView.frame;

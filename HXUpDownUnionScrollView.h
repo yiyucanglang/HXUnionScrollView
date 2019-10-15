@@ -46,6 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)allowHorizaontalScrollEnabled:(BOOL)scrollEnabled;
 
 - (void)menuScrollToTop:(BOOL)animated;
+
+//this will let unionScrollView make to get the newest HeadView from dataSource method
+- (void)reloadHeadView;
 @end
 
 
@@ -53,16 +56,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSInteger)numberOfViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
-#pragma mark containerView、ScrollView
-- (UIViewController *)viewControllerInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView viewAtIndex:(NSInteger)index;
-
 - (UIScrollView *)coreScrollViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView viewAtIndex:(NSInteger)index;
-
 
 - (CGFloat)menuHeightInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
 
 @optional
+
+- (UIViewController * _Nullable)viewControllerInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView viewAtIndex:(NSInteger)index;
 
 #pragma mark headView
 - (UIView *)headViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;

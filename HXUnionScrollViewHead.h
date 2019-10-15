@@ -13,7 +13,8 @@
 
 typedef NS_ENUM(NSInteger, SliderStyle) {
     SliderStyleNormal,
-    SliderStyleFlex
+    SliderStyleFlex,
+    SliderStyleEqualMenuItem, //when this set, custom slider width will be ignord
 };
 
 typedef NS_ENUM(NSInteger, UnionScrollViewSwipeDirection) {
