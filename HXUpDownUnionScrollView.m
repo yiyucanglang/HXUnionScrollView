@@ -42,7 +42,6 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 @property (nonatomic, assign) NSInteger           currentPageIndex;
 @property (nonatomic, assign) NSInteger           quickSwipeBeginPageIndex;
 @property (nonatomic, strong) NSMutableArray *scrollViewsArr;
-@property (nonatomic, strong) NSMutableArray *vcsArr;
 
 @property (nonatomic, strong) NSMutableArray *viewDataSourceArr;
 
@@ -398,9 +397,8 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         if(indexPath.item == 0) {
             
             if (vc && ![self.associatedVC shouldAutomaticallyForwardAppearanceMethods]) {
-                UIViewController *appearVC = self.vcsArr[indexPath.item];
-                [appearVC beginAppearanceTransition:YES animated:YES];
-                [appearVC endAppearanceTransition];
+                [vc beginAppearanceTransition:YES animated:YES];
+                [vc endAppearanceTransition];
             }
             
         }
@@ -577,13 +575,6 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         _scrollViewsArr = [[NSMutableArray alloc] init];
     }
     return _scrollViewsArr;
-}
-    
-- (NSMutableArray *)vcsArr {
-    if (!_vcsArr) {
-        _vcsArr = [[NSMutableArray alloc] init];
-    }
-    return _vcsArr;
 }
 
 - (NSMutableArray *)viewDataSourceArr {
