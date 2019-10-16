@@ -192,7 +192,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         
         NSMutableDictionary *dic = [NSMutableDictionary dictionary];
         [self.viewDataSourceArr addObject:dic];
-        if ([self.dataSource respondsToSelector:@selector(viewControllerInUpDownUnionScrollView:viewAtIndex:)]) {
+        if ([self.hxdataSource respondsToSelector:@selector(viewControllerInUpDownUnionScrollView:viewAtIndex:)]) {
             dic[kViewControllerKey] = [self.hxdataSource viewControllerInUpDownUnionScrollView:self viewAtIndex:i];
         }
         dic[kScrollViewKey] = [self.hxdataSource coreScrollViewInUpDownUnionScrollView:self viewAtIndex:i];
