@@ -15,6 +15,7 @@
     self = [super init];
     if (self) {
         self.viewClassName = @"HXIndicatorMemuItemView";
+        self.mininumWidth = 20;
     }
     return self;
 }
@@ -26,6 +27,6 @@
     }
     tempLB.text = self.title;
     tempLB.font = self.btnFont;
-    self.viewWidth = MAX(20, [tempLB sizeThatFits:CGSizeMake(1000, self.viewHeight)].width);
+    self.viewWidth = MAX(self.mininumWidth, [tempLB sizeThatFits:CGSizeMake(1000, self.viewHeight)].width);
 }
 @end

@@ -71,6 +71,15 @@ typedef NS_ENUM(NSInteger, HXIndicatorMenuLayoutStyle) {
 //default HXIndicatorMenuLayoutStyle_CenterEqualDivide
 - (HXIndicatorMenuLayoutStyle)layoutStyleInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
 
+
+/**
+ menu's item mininum Width
+
+ @param menuView menuView
+ @return mininum Width default: 20
+ */
+- (CGFloat)mininumMenuItemWidthInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
+
 //default @"HXIndicatorMemuItemView"
 - (NSString *)customMenuItemViewClassStrInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
 @end

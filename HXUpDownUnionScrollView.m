@@ -80,14 +80,16 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 
 #pragma mark - System Method
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    
+    if ([self.hxdelegate respondsToSelector:@selector(upDownUnionScrollView:gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:)]) {
+        return [self.hxdelegate upDownUnionScrollView:self gestureRecognizer:gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:otherGestureRecognizer];
+    }
     if ([gestureRecognizer isKindOfClass:UIPanGestureRecognizer.class] &&
         [otherGestureRecognizer isKindOfClass:UIPanGestureRecognizer.class])
     {
         CGPoint velocity = [(UIPanGestureRecognizer *)gestureRecognizer velocityInView:gestureRecognizer.view];
-
         // 判断是否垂直滚动
         BOOL isVerticalScroll = ABS(velocity.y) * 0.5 >= ABS(velocity.x);
-
         return  isVerticalScroll;
     }
     
@@ -219,7 +221,6 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     if (self.contentOffset.y >= self._criticlalOffset) {
         return;
     }
-    [self reloadData];
     [self resetSubScrollViewsContentOffset];
 }
 
@@ -258,8 +259,8 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
             if (ratio < self.currentPageIndex) {
                 targetIndex = baseIndex + 1;
             }
-            
-            [self.menuView selectItem:targetIndex animated:NO];
+            NSLog(@"swipe qucik:ratio: %@ baseIndex :%@ targetIndex:%@", @(ratio), @(baseIndex), @(targetIndex));
+            [self.menuView selectItem:targetIndex animated:YES];
             
             if (self.quickSwipeBeginPageIndex < 0) {
                 self.quickSwipeBeginPageIndex = self.currentPageIndex;
@@ -431,7 +432,10 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         
         [self adjustContentViewOffset];
         
-        [self.horizontalCollectionView setContentOffset:CGPointMake(index * self.horizontalCollectionView.frame.size.width, self.horizontalCollectionView.contentOffset.y) animated:animated];
+        if (!self.horizontalCollectionView.isDragging) {//用户拖动时不调整
+            [self.horizontalCollectionView setContentOffset:CGPointMake(index * self.horizontalCollectionView.frame.size.width, self.horizontalCollectionView.contentOffset.y) animated:animated];
+        }
+        
         
         if ([self.hxdelegate respondsToSelector:@selector(upDownUnionScrollView:didSelectItemAtIndex: deselectItemAtIndex:)]) {
             [self.hxdelegate upDownUnionScrollView:self didSelectItemAtIndex:index deselectItemAtIndex:oldPageIndex];

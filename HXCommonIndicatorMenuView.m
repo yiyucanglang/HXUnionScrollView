@@ -39,6 +39,7 @@
 @property (nonatomic, assign) CGFloat   menuItemScaleFacor;
 @property (nonatomic, assign) CGFloat   edgeInsetLeft;
 @property (nonatomic, assign) CGFloat   interitemSpacing;
+@property (nonatomic, assign) CGFloat   mininumMenuItemWidth;
 
 @property (nonatomic, assign) HXIndicatorMenuLayoutStyle     layoutStyle;
 @property (nonatomic, copy) NSString  *customMenuItemViewClassStr;
@@ -118,6 +119,10 @@
         self.customMenuItemViewClassStr = [self.menuDataSource customMenuItemViewClassStrInHXCommonIndicatorMenuView:self];
     }
     
+    if ([self.menuDataSource respondsToSelector:@selector(mininumMenuItemWidthInHXCommonIndicatorMenuView:)]) {
+        self.mininumMenuItemWidth = [self.menuDataSource mininumMenuItemWidthInHXCommonIndicatorMenuView:self];
+    }
+    
     self.menuItemsArr = [NSMutableArray array];
     UILabel *tempLB = [[UILabel alloc] init];
     tempLB.font = self.btnFont;
@@ -133,6 +138,7 @@
         model.viewClassName = self.customMenuItemViewClassStr;
         model.scale = self.menuItemScaleFacor;
         model.viewHeight = self.frame.size.height;
+        model.mininumWidth = self.mininumMenuItemWidth;
         model.delegate = (id<HXConvenientViewDelegate>)self;
         model.title = title;
         model.btnFont = self.btnFont;
@@ -176,9 +182,6 @@
         }
     }
     
-    
-    
-    
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     layout.minimumLineSpacing      = self.interitemSpacing;
     layout.minimumInteritemSpacing = self.interitemSpacing;
@@ -202,6 +205,11 @@
 }
 
 - (void)selectItem:(NSInteger)itemIndex animated:(BOOL)animated {
+    
+    if (itemIndex == self.currentIndex) {
+        return;
+    }
+    
     HXCommonIndicatorMenuItemModel *oldModel = self.menuItemsArr[self.currentIndex];
     oldModel.selected = NO;
     
@@ -214,6 +222,7 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [newModel.collectionView scrollToItemAtIndexPath:newModel.indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:animated];
     });
+    
     
     [UIView animateWithDuration:duration animations:
      ^{
@@ -357,6 +366,7 @@
     self.edgeInsetLeft = 15;
     self.edgeInsetRight = 15;
     self.interitemSpacing = 12;
+    self.mininumMenuItemWidth = 20;
     self.customMenuItemViewClassStr = @"HXIndicatorMemuItemView";
 }
 
@@ -378,7 +388,6 @@
     targetFrame.origin.x = targetCellOriginX- (self.sliderWidth - targetCellWidth)/2;
     self.sliderView.frame = targetFrame;
 }
-
 
 - (CGFloat)scaleInterpolationFrom:(CGFloat)from to:(CGFloat)to percent:(CGFloat)percent
 {

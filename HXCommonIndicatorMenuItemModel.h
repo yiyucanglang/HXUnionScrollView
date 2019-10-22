@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL   selected;
 @property (nonatomic, strong) UIFont         *btnFont;
 @property (nonatomic, assign) CGFloat         scale;
+@property (nonatomic, assign) CGFloat   mininumWidth;
 
 @property (nonatomic, weak) UIView<HXCommonIndicatorMenuItemViewDeleagte>   *associatedItemView;
 

@@ -20,6 +20,7 @@
 
 #pragma mark - Life Cycle
 - (void)UIConfig {
+    
     [self addSubview:self.titleLB];
     [self.titleLB mas_makeConstraints:^(MASConstraintMaker *make) {
         make.center.equalTo(self);

@@ -125,6 +125,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)upDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView didSelectItemAtIndex:(NSInteger)selectedIndex deselectItemAtIndex:(NSInteger)deselectIndex;
 
 - (void)upDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView contentOffsetY:(CGFloat)contentOffsetY allowMaximumContentOffsetY:(CGFloat)allowMaximumContentOffsetY;
+
+- (BOOL)upDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer;
 @end
 
 NS_ASSUME_NONNULL_END
