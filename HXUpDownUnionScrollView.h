@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) id<HXUpDownUnionScrollViewDataSource> hxdataSource;
 @property (nonatomic, weak) id<HXUpDownUnionScrollViewDelegate> hxdelegate;
 
+@property (nonatomic, assign, readonly) NSInteger           currentPageIndex;
+
 //默认值为当前系统导航栏左滑返回手势，此手势优先级高于控件滑动手势
 @property (nonatomic, weak) UIGestureRecognizer *outerHighPriorityGestureRecognizer;
 

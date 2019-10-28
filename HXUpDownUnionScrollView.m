@@ -25,6 +25,7 @@ static NSInteger kCellTag = 9527;
 
 static void *HXHoverPageViewContentOffsetContext = &HXHoverPageViewContentOffsetContext;
 static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOffsetContext;
+static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFrameContext;
 
 @interface HXUpDownUnionScrollView()
 <
@@ -51,6 +52,11 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 
 @property (nonatomic, strong) UIView  *currentHeadView;
 
+@property (nonatomic, assign) CGSize  originalSize;
+@property (nonatomic, assign) CGRect  originalRect;
+@property (nonatomic, assign) CGPoint superContentOffset;
+@property (nonatomic, assign) CGPoint currentSubScrollViewContentOffset;
+@property (nonatomic, assign) UIInterfaceOrientation originalOrientation;
 @end
 @implementation HXUpDownUnionScrollView
 #pragma mark - Life Cycle
@@ -74,6 +80,9 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         }
         [self _storeViewData];
         [self addScrollViewsObserver];
+        
+        self.originalOrientation = [UIApplication sharedApplication].statusBarOrientation;
+        
     }
     return self;
 }
@@ -105,9 +114,14 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         CGFloat oldoffset_y = oldvalue.UIOffsetValue.vertical;
         CGFloat newoffset_y = newvalue.UIOffsetValue.vertical;
         
-        if (oldoffset_y == newoffset_y && self.bounces != NO) {
+        if (oldoffset_y == newoffset_y) {
             return;
         }
+        
+        if (self.originalOrientation != [UIApplication sharedApplication].statusBarOrientation) {
+            return;
+        }
+        
         
         UIScrollView *scrollView = object;
         if (self.contentOffset.y < self._criticlalOffset) {
@@ -116,14 +130,26 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
             self.contentOffset = CGPointMake(0, self._criticlalOffset);
         }
         
+        UIScrollView *currentScrollView = self.scrollViewsArr[self.currentPageIndex];
+        if (scrollView == currentScrollView) {
+            self.currentSubScrollViewContentOffset = scrollView.contentOffset;
+        }
+        
     }
     else if ([keyPath isEqualToString:@"frame"]) {
-        [self reloadHeadView];
+        NSValue *oldvalue   = change[NSKeyValueChangeOldKey];
+        NSValue *newvalue   = change[NSKeyValueChangeNewKey];
+        CGRect oldRect = [oldvalue CGRectValue];
+        CGRect newRect = [newvalue CGRectValue];
+        if (oldRect.size.height != newRect.size.height) {
+            [self reloadHeadView];
+        }
     }
 }
 
 - (void)willMoveToSuperview:(UIView *)newSuperview {
     if (newSuperview) {
+        
         [self createHeaderView];
         if (self.outerHighPriorityGestureRecognizer) {
             [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:self.outerHighPriorityGestureRecognizer];
@@ -139,6 +165,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     }
 }
 
+
 - (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated {
     if (contentOffset.y <= self._criticlalOffset) {
         [self resetSubScrollViewsContentOffset];
@@ -147,6 +174,27 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
     [super setContentOffset:contentOffset animated:animated];
 }
 
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    
+    //REMARK: fix display position error and changed  when back from landscpae viewcontroller
+    if (!CGRectEqualToRect(self.originalRect, self.frame)) {
+        
+        [self setContentOffset:self.superContentOffset];
+        
+        UIScrollView *scrollView = self.scrollViewsArr[self.currentPageIndex];
+        scrollView.contentOffset = self.currentSubScrollViewContentOffset;
+        
+        self.originalRect = self.frame;
+        
+        [self.horizontalCollectionView setContentOffset:CGPointMake(self.currentPageIndex * self.horizontalCollectionView.frame.size.width, self.horizontalCollectionView.contentOffset.y) animated:NO];
+    }
+    
+    if (self.originalOrientation == [UIApplication sharedApplication].statusBarOrientation) {
+        self.superContentOffset = self.contentOffset;
+    }
+    
+}
 
 #pragma mark - Public Method
 - (void)scrollToIndex:(NSInteger)pageIndex animated:(BOOL)animated {
@@ -171,6 +219,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 }
 
 #pragma mark - Private Method
+
 - (void)createHeaderView {
     if (self.addHeadFrameObserver) {
         [self.currentHeadView removeObserver:self forKeyPath:@"frame"];
@@ -182,7 +231,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         
         self.tableHeaderView = self.currentHeadView;
         
-        [self.tableHeaderView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew context:nil];
+        [self.tableHeaderView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld context:nil];
         self.addHeadFrameObserver = YES;
     }
 }
@@ -259,7 +308,6 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
             if (ratio < self.currentPageIndex) {
                 targetIndex = baseIndex + 1;
             }
-            NSLog(@"swipe qucik:ratio: %@ baseIndex :%@ targetIndex:%@", @(ratio), @(baseIndex), @(targetIndex));
             [self.menuView selectItem:targetIndex animated:YES];
             
             if (self.quickSwipeBeginPageIndex < 0) {
@@ -303,8 +351,12 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    //REMARK: optimize The console outputs a layout error log about collectionview when back from landscape viewcontroller
+    if (CGSizeEqualToSize(self.originalSize, CGSizeZero)) {
+        self.originalSize = tableView.frame.size;
+    }
     
-    return tableView.frame.size.height - [self.hxdataSource menuHeightInUpDownUnionScrollView:self] - self.customHoverTopMargin;
+    return self.originalSize.height - [self.hxdataSource menuHeightInUpDownUnionScrollView:self] - self.customHoverTopMargin;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
@@ -337,6 +389,12 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
         }
         return;
     }
+    
+    
+    if (self.originalOrientation != [UIApplication sharedApplication].statusBarOrientation) {
+        return;
+    }
+    
     
     CGFloat cirticalContentOffset = self._criticlalOffset;
     
