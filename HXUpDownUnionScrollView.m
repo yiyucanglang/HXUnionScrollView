@@ -27,71 +27,17 @@ static void *HXHoverPageViewContentOffsetContext = &HXHoverPageViewContentOffset
 static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOffsetContext;
 static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFrameContext;
 
-@interface HXUpDownUnionScrollView()
-<
-    UITableViewDataSource,
-    UITableViewDelegate,
-    UICollectionViewDataSource,
-    UICollectionViewDelegate,
-    HXIndicatorMenuViewDelegate
->
+@interface HXUnionTableView : UITableView
+@property (nonatomic, strong) id  unionDelegate;
 
-@property (nonatomic, assign) BOOL  addHeadFrameObserver;
-
-@property (nonatomic, strong) UIView<HXUpDownUnionScrollViewMenuViewDelegate> *menuView;
-@property (nonatomic, strong) UICollectionView   *horizontalCollectionView;
-@property (nonatomic, assign) NSInteger           currentPageIndex;
-@property (nonatomic, assign) NSInteger           quickSwipeBeginPageIndex;
-@property (nonatomic, strong) NSMutableArray *scrollViewsArr;
-
-@property (nonatomic, strong) NSMutableArray *viewDataSourceArr;
-
-@property (nonatomic, weak) UIViewController *associatedVC;
-
-@property (nonatomic, assign) CGFloat customHoverTopMargin;
-
-@property (nonatomic, strong) UIView  *currentHeadView;
-
-@property (nonatomic, assign) CGSize  originalSize;
-@property (nonatomic, assign) CGRect  originalRect;
-@property (nonatomic, assign) CGPoint superContentOffset;
-@property (nonatomic, assign) CGPoint currentSubScrollViewContentOffset;
-@property (nonatomic, assign) UIInterfaceOrientation originalOrientation;
 @end
-@implementation HXUpDownUnionScrollView
-#pragma mark - Life Cycle
-- (instancetype)initWithHXDataSource:(id<HXUpDownUnionScrollViewDataSource>)hxdataSource hxDelegate:(id<HXUpDownUnionScrollViewDelegate>)hxdelegate associatedViewController:(nonnull UIViewController *)associatedViewController {
-    if (self = [super initWithFrame:CGRectZero]) {
-        
-        self.showsVerticalScrollIndicator   = NO;
-        self.showsHorizontalScrollIndicator = NO;
-        self.quickSwipeBeginPageIndex       = -1;
-        self.currentPageIndex               = 0;
-        self.dataSource                     = self;
-        self.delegate                       = self;
-        
-        self.hxdataSource = hxdataSource;
-        self.hxdelegate   = hxdelegate;
-        self.associatedVC = associatedViewController;
-        self.separatorStyle = UITableViewCellSeparatorStyleNone;
-        self.customHoverTopMargin = 0;
-        if ([self.hxdataSource respondsToSelector:@selector(customHoverTopMarginInUpDownUnionScrollView:)]) {
-            self.customHoverTopMargin = MAX(0, [self.hxdataSource customHoverTopMarginInUpDownUnionScrollView:self]);
-        }
-        [self _storeViewData];
-        [self addScrollViewsObserver];
-        
-        self.originalOrientation = [UIApplication sharedApplication].statusBarOrientation;
-        
-    }
-    return self;
-}
 
-#pragma mark - System Method
+@implementation HXUnionTableView
+
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
     
-    if ([self.hxdelegate respondsToSelector:@selector(upDownUnionScrollView:gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:)]) {
-        return [self.hxdelegate upDownUnionScrollView:self gestureRecognizer:gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:otherGestureRecognizer];
+    if ([self.unionDelegate respondsToSelector:@selector(upDownUnionScrollView:gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:)]) {
+        return [self.unionDelegate upDownUnionScrollView:self gestureRecognizer:gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:otherGestureRecognizer];
     }
     
     if ([otherGestureRecognizer.view isKindOfClass:[UICollectionView class]]) {
@@ -110,6 +56,65 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     return YES;
 }
 
+@end
+
+
+@interface HXUpDownUnionScrollView()
+<
+    UITableViewDataSource,
+    UITableViewDelegate,
+    UICollectionViewDataSource,
+    UICollectionViewDelegate,
+    HXIndicatorMenuViewDelegate
+>
+
+@property (nonatomic, assign) BOOL  addHeadFrameObserver;
+@property (nonatomic, strong) HXUnionTableView  *mainTableView;
+@property (nonatomic, strong) UIView<HXUpDownUnionScrollViewMenuViewDelegate> *menuView;
+@property (nonatomic, strong) UICollectionView   *horizontalCollectionView;
+@property (nonatomic, assign) NSInteger           currentPageIndex;
+@property (nonatomic, assign) NSInteger           quickSwipeBeginPageIndex;
+@property (nonatomic, strong) NSMutableArray *scrollViewsArr;
+
+@property (nonatomic, strong) NSMutableArray *viewDataSourceArr;
+
+@property (nonatomic, weak) UIViewController *associatedVC;
+
+@property (nonatomic, assign) CGFloat customHoverTopMargin;
+
+@property (nonatomic, strong) UIView  *currentHeadView;
+
+@end
+@implementation HXUpDownUnionScrollView
+#pragma mark - Life Cycle
+- (instancetype)initWithHXDataSource:(id<HXUpDownUnionScrollViewDataSource>)hxdataSource hxDelegate:(id<HXUpDownUnionScrollViewDelegate>)hxdelegate associatedViewController:(nonnull UIViewController *)associatedViewController {
+    if (self = [super initWithFrame:CGRectZero]) {
+        
+        
+        self.quickSwipeBeginPageIndex       = -1;
+        self.currentPageIndex               = 0;
+        
+        self.hxdataSource = hxdataSource;
+        self.hxdelegate   = hxdelegate;
+        self.associatedVC = associatedViewController;
+        
+        [self addSubview:self.mainTableView];
+        [self.mainTableView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(self);
+        }];
+        [self createHeaderView];
+        
+        self.customHoverTopMargin = 0;
+        if ([self.hxdataSource respondsToSelector:@selector(customHoverTopMarginInUpDownUnionScrollView:)]) {
+            self.customHoverTopMargin = MAX(0, [self.hxdataSource customHoverTopMarginInUpDownUnionScrollView:self]);
+        }
+        [self _storeViewData];
+        [self addScrollViewsObserver];
+    }
+    return self;
+}
+
+#pragma mark - System Method
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     if (context == &HXHoverPageViewContentOffsetContext)
     {
@@ -123,22 +128,16 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
             return;
         }
         
-        if (self.originalOrientation != [UIApplication sharedApplication].statusBarOrientation) {
-            return;
-        }
+        
         
         
         UIScrollView *scrollView = object;
-        if (self.contentOffset.y < self._criticlalOffset) {
+        if (self.mainTableView.contentOffset.y < self._criticlalOffset) {
             scrollView.contentOffset = CGPointZero;
         }else {
-            self.contentOffset = CGPointMake(0, self._criticlalOffset);
+            self.mainTableView.contentOffset = CGPointMake(0, self._criticlalOffset);
         }
         
-        UIScrollView *currentScrollView = self.scrollViewsArr[self.currentPageIndex];
-        if (scrollView == currentScrollView) {
-            self.currentSubScrollViewContentOffset = scrollView.contentOffset;
-        }
         
     }
     else if ([keyPath isEqualToString:@"frame"]) {
@@ -152,23 +151,23 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     }
 }
 
-- (void)willMoveToSuperview:(UIView *)newSuperview {
-    if (newSuperview) {
-        
-        [self createHeaderView];
-        if (self.outerHighPriorityGestureRecognizer) {
-            [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:self.outerHighPriorityGestureRecognizer];
-        }
-        else {
-            UIGestureRecognizer *defautGesture = self.associatedVC.navigationController.interactivePopGestureRecognizer;
-            self.outerHighPriorityGestureRecognizer = defautGesture;
-            if (defautGesture) {
-                [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:defautGesture];
-            }
-            
-        }
-    }
-}
+//- (void)willMoveToSuperview:(UIView *)newSuperview {
+//    if (newSuperview) {
+//
+//        [self createHeaderView];
+//        if (self.outerHighPriorityGestureRecognizer) {
+//            [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:self.outerHighPriorityGestureRecognizer];
+//        }
+//        else {
+//            UIGestureRecognizer *defautGesture = self.associatedVC.navigationController.interactivePopGestureRecognizer;
+//            self.outerHighPriorityGestureRecognizer = defautGesture;
+//            if (defautGesture) {
+//                [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:defautGesture];
+//            }
+//
+//        }
+//    }
+//}
 
 
 - (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated {
@@ -176,30 +175,9 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         [self resetSubScrollViewsContentOffset];
     }
     
-    [super setContentOffset:contentOffset animated:animated];
+    [self.mainTableView setContentOffset:contentOffset animated:animated];
 }
 
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    
-    //REMARK: fix display position error and changed  when back from landscpae viewcontroller
-    if (!CGRectEqualToRect(self.originalRect, self.frame)) {
-        
-        [self setContentOffset:self.superContentOffset];
-        
-        UIScrollView *scrollView = self.scrollViewsArr[self.currentPageIndex];
-        scrollView.contentOffset = self.currentSubScrollViewContentOffset;
-        
-        self.originalRect = self.frame;
-        
-        [self.horizontalCollectionView setContentOffset:CGPointMake(self.currentPageIndex * self.horizontalCollectionView.frame.size.width, self.horizontalCollectionView.contentOffset.y) animated:NO];
-    }
-    
-    if (self.originalOrientation == [UIApplication sharedApplication].statusBarOrientation) {
-        self.superContentOffset = self.contentOffset;
-    }
-    
-}
 
 #pragma mark - Public Method
 - (void)scrollToIndex:(NSInteger)pageIndex animated:(BOOL)animated {
@@ -234,9 +212,9 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     if([self.hxdataSource respondsToSelector:@selector(headViewInUpDownUnionScrollView:)]) {
         self.currentHeadView = [self.hxdataSource headViewInUpDownUnionScrollView:self];
         
-        self.tableHeaderView = self.currentHeadView;
+        self.mainTableView.tableHeaderView = self.currentHeadView;
         
-        [self.tableHeaderView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld context:nil];
+        [self.mainTableView.tableHeaderView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld context:nil];
         self.addHeadFrameObserver = YES;
     }
 }
@@ -272,19 +250,19 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 }
 
 - (void)adjustContentViewOffset {
-    if (self.contentOffset.y >= self._criticlalOffset) {
+    if (self.mainTableView.contentOffset.y >= self._criticlalOffset) {
         return;
     }
     [self resetSubScrollViewsContentOffset];
 }
 
 - (CGFloat)_criticlalOffset {
-    return self.tableHeaderView.frame.size.height - self.customHoverTopMargin;
+    return self.mainTableView.tableHeaderView.frame.size.height - self.customHoverTopMargin;
 }
 
 - (void)reloadHeadView {
     [self createHeaderView];
-    [self reloadData];
+    [self.mainTableView reloadData];
     [self resetSubScrollViewsContentOffset];
 }
 
@@ -356,12 +334,7 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    //REMARK: optimize The console outputs a layout error log about collectionview when back from landscape viewcontroller
-    if (CGSizeEqualToSize(self.originalSize, CGSizeZero)) {
-        self.originalSize = tableView.frame.size;
-    }
-    
-    return self.originalSize.height - [self.hxdataSource menuHeightInUpDownUnionScrollView:self] - self.customHoverTopMargin;
+    return self.bounds.size.height - [self.hxdataSource menuHeightInUpDownUnionScrollView:self] - self.customHoverTopMargin;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
@@ -395,17 +368,12 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         return;
     }
     
-    
-    if (self.originalOrientation != [UIApplication sharedApplication].statusBarOrientation) {
-        return;
-    }
-    
-    
+
     CGFloat cirticalContentOffset = self._criticlalOffset;
     
     UIScrollView *currentSubScrollView = [self.hxdataSource coreScrollViewInUpDownUnionScrollView:self viewAtIndex:self.currentPageIndex];
     if (currentSubScrollView != nil && currentSubScrollView.contentOffset.y > 0) {
-        self.contentOffset = CGPointMake(0, cirticalContentOffset);
+        self.mainTableView.contentOffset = CGPointMake(0, cirticalContentOffset);
     }
     
     if (scrollView.contentOffset.y < cirticalContentOffset) {
@@ -413,11 +381,11 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     }
     
     if (scrollView.contentOffset.y > cirticalContentOffset && currentSubScrollView.contentOffset.y == 0) {
-        self.contentOffset = CGPointMake(0, cirticalContentOffset);
+        self.mainTableView.contentOffset = CGPointMake(0, cirticalContentOffset);
     }
     
     if ([self.hxdelegate respondsToSelector:@selector(upDownUnionScrollView:contentOffsetY:allowMaximumContentOffsetY:)]) {
-        [self.hxdelegate upDownUnionScrollView:self contentOffsetY:self.contentOffset.y allowMaximumContentOffsetY:cirticalContentOffset];
+        [self.hxdelegate upDownUnionScrollView:self contentOffsetY:self.mainTableView.contentOffset.y allowMaximumContentOffsetY:cirticalContentOffset];
     }
 }
 
@@ -538,6 +506,20 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 }
 
 #pragma mark - Setter And Getter
+- (HXUnionTableView *)mainTableView {
+    if (!_mainTableView) {
+        _mainTableView = [[HXUnionTableView alloc] init];
+        _mainTableView.delegate   = self;
+        _mainTableView.dataSource = self;
+        _mainTableView.unionDelegate = self.hxdelegate;
+        _mainTableView.showsVerticalScrollIndicator   = NO;
+        _mainTableView.showsHorizontalScrollIndicator = NO;
+        _mainTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    }
+    return _mainTableView;
+}
+
+
 - (UICollectionView *)horizontalCollectionView
 {
     if (!_horizontalCollectionView)
@@ -684,7 +666,7 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 - (void)dealloc {
     [self removeScrollViewsObserver];
     if (self.addHeadFrameObserver) {
-        [self.tableHeaderView removeObserver:self forKeyPath:@"frame"];
+        [self.mainTableView.tableHeaderView removeObserver:self forKeyPath:@"frame"];
     }
 }
 

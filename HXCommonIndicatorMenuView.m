@@ -64,14 +64,6 @@
 }
 
 #pragma mark - System Method
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    
-    //REMARK: fix display position error and changed  when back from landscpae viewcontroller
-    [self.collectionView reloadData];
-    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.currentIndex inSection:0] atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:NO];
-    [self _moveSliderToAvailablePosition];
-}
 
 #pragma mark - Public Method
 - (void)reload {

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'HXUnionScrollView'
-  s.version          = '1.0.8'
+  s.version          = '1.1.0'
   s.summary          = '联动滑动悬停控件'
 
   s.homepage         = 'https://github.com/yiyucanglang'

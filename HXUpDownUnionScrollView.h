@@ -18,17 +18,18 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  @warning 禁止设置 HXUpDownUnionScrollView的datasource及delegate
  */
-@interface HXUpDownUnionScrollView : UITableView
+@interface HXUpDownUnionScrollView : UIView
+
+
 @property (nonatomic, weak) id<HXUpDownUnionScrollViewDataSource> hxdataSource;
 @property (nonatomic, weak) id<HXUpDownUnionScrollViewDelegate> hxdelegate;
+
+@property (nonatomic, strong, readonly) UITableView  *mainTableView;
+@property (nonatomic, strong, readonly) UICollectionView  *horizontalCollectionView;
 
 @property (nonatomic, assign, readonly) NSInteger           currentPageIndex;
 
 @property (nonatomic, strong, readonly) UIView<HXUpDownUnionScrollViewMenuViewDelegate>  *menuView;
-@property (nonatomic, strong, readonly) UIPanGestureRecognizer  *horizontalCollectionViewGesture;
-
-//默认值为当前系统导航栏左滑返回手势，此手势优先级高于控件滑动手势
-@property (nonatomic, weak) UIGestureRecognizer *outerHighPriorityGestureRecognizer;
 
 - (instancetype)initWithHXDataSource:(id<HXUpDownUnionScrollViewDataSource>)hxdataSource
                           hxDelegate:(id<HXUpDownUnionScrollViewDelegate>)hxdelegate
@@ -51,6 +52,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)allowHorizaontalScrollEnabled:(BOOL)scrollEnabled;
 
 - (void)menuScrollToTop:(BOOL)animated;
+
+- (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated;
 
 //this will let unionScrollView make to get the newest HeadView from dataSource method
 - (void)reloadHeadView;
