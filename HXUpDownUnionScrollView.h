@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly) NSInteger           currentPageIndex;
 
+@property (nonatomic, strong, readonly) UIView<HXUpDownUnionScrollViewMenuViewDelegate>  *menuView;
+@property (nonatomic, strong, readonly) UIPanGestureRecognizer  *horizontalCollectionViewGesture;
+
 //默认值为当前系统导航栏左滑返回手势，此手势优先级高于控件滑动手势
 @property (nonatomic, weak) UIGestureRecognizer *outerHighPriorityGestureRecognizer;
 
@@ -67,6 +70,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (UIViewController * _Nullable)viewControllerInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView viewAtIndex:(NSInteger)index;
 
+- (UIView * _Nullable)containerViewForScrollViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView viewAtIndex:(NSInteger)index;
+
 #pragma mark headView
 - (UIView *)headViewInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
@@ -101,7 +106,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (UIColor *)sliderColorInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
-
 //default [UIFont systemFontOfSize:15]
 - (UIFont *)menuFontInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
@@ -111,8 +115,14 @@ NS_ASSUME_NONNULL_BEGIN
 //default 2
 - (CGFloat)sliderHeightMarginInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
-//default 2
+//default 0
 - (CGFloat)sliderBottomMarginInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
+
+//default 0
+- (CGFloat)menuItemsTopMarginInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
+
+//default 0
+- (CGFloat)menuItemsBottomMarginInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
 
 - (CGFloat)sliderCornerRadiusInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
@@ -120,6 +130,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (SliderStyle)sliderStyleInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 
 - (BOOL)menuBottomLineHiddenUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
+
+//default [UIColor colorWithRed:238/255.0 green:238/255.0 blue:238/255.0 alpha:1]
+- (UIColor *)menuBottomLineColorInUpDownUnionScrollView:(HXUpDownUnionScrollView *)upDownUnionScrollView;
 @end
 
 @protocol   HXUpDownUnionScrollViewDelegate<NSObject>

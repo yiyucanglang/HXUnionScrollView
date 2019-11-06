@@ -22,6 +22,9 @@
 @property (nonatomic, strong) UIView         *bottomLine;
 
 @property (nonatomic, assign) NSInteger      currentIndex;
+@property (nonatomic, strong) NSMutableArray<MASConstraint *>  *btnBottomConstraintsArr;
+
+@property (nonatomic, strong) NSMutableArray<MASConstraint *>  *btnTopConstraintsArr;
 
 @end
 
@@ -39,7 +42,7 @@
         self.sliderColor = sliderColor ?: self.selectColor;
         self.btnFont = btnFont ?: [UIFont systemFontOfSize:15];
         self.sliderHeight = 2;
-        self.sliderBottomMargin = 2;
+        self.sliderBottomMargin = 0;
         [self UILayout];
     }
     return self;
@@ -62,7 +65,7 @@
         if (self.sliderStyle == SliderStyleEqualMenuItem) {
             self.sliderWidth = btnTitleFrame.size.width;
         }
-        self.sliderView.frame = CGRectMake(btnTitleFrame.origin.x - (self.sliderWidth - btnTitleFrame.size.width)/2, self.frame.size.height - self.sliderBottomMargin, self.sliderWidth, self.sliderHeight);
+        self.sliderView.frame = CGRectMake(btnTitleFrame.origin.x - (self.sliderWidth - btnTitleFrame.size.width)/2, self.frame.size.height - self.sliderBottomMargin - self.sliderHeight, self.sliderWidth, self.sliderHeight);
         self.sliderView.layer.cornerRadius = self.sliderCornerRadius;
         if (!self.sliderView.superview) {
             [self addSubview:self.sliderView];
@@ -162,6 +165,8 @@
     UIButton *lastBtn;
     for (NSInteger i = 0; i < self.titleArray.count; i++)
     {
+        __block MASConstraint *btnBottomConstraint;
+        __block MASConstraint  *btnTopConstraint;
         UIButton *btn = [[UIButton alloc] init];
         [btn setTitle:self.titleArray[i] forState:UIControlStateNormal];
         [btn setTitleColor:self.normalColor forState:UIControlStateNormal];
@@ -175,7 +180,9 @@
             [btn setTitleColor:self.selectColor forState:UIControlStateNormal];
             
             [btn mas_makeConstraints:^(MASConstraintMaker *make) {
-                make.left.top.bottom.equalTo(self);
+                make.left.equalTo(self);
+                btnTopConstraint = make.top.equalTo(self).with.offset(0);
+                btnBottomConstraint = make.bottom.equalTo(self).with.offset(0);
                 if (self.titleArray.count == 1) {
                     make.right.equalTo(self);
                 }
@@ -184,17 +191,24 @@
         else if(i == self.titleArray.count - 1) {
             [btn mas_makeConstraints:^(MASConstraintMaker *make) {
                 make.left.equalTo(lastBtn.mas_right);
-                make.right.top.bottom.equalTo(self);
+                make.right.equalTo(self);
+                btnTopConstraint = make.top.equalTo(self).with.offset(0);
+                btnBottomConstraint = make.bottom.equalTo(self).with.offset(0);
                 make.size.equalTo(lastBtn);
             }];
         }
         else {
             [btn mas_makeConstraints:^(MASConstraintMaker *make) {
-                make.top.bottom.equalTo(self);
+                btnTopConstraint = make.top.equalTo(self).with.offset(0);
+                btnBottomConstraint = make.bottom.equalTo(self).with.offset(0);
                 make.left.equalTo(lastBtn.mas_right);
                 make.size.equalTo(lastBtn);
             }];
         }
+        
+        [self.btnBottomConstraintsArr addObject:btnBottomConstraint];
+        [self.btnTopConstraintsArr addObject:btnTopConstraint];
+        
         btn.titleLabel.font = self.btnFont;
         lastBtn = btn;
         
@@ -301,6 +315,36 @@
 
 - (void)setHiddenBottomLine:(BOOL)hiddenBottomLine {
     self.bottomLine.hidden = hiddenBottomLine;
+}
+
+- (NSMutableArray<MASConstraint *> *)btnBottomConstraintsArr {
+    if (!_btnBottomConstraintsArr) {
+        _btnBottomConstraintsArr = [NSMutableArray array];
+    }
+    return _btnBottomConstraintsArr;
+}
+
+- (NSMutableArray<MASConstraint *> *)btnTopConstraintsArr {
+    if (!_btnTopConstraintsArr) {
+        _btnTopConstraintsArr = [NSMutableArray array];
+    }
+    return _btnTopConstraintsArr;
+}
+
+- (void)setMenuItemBottomMargin:(CGFloat)menuItemBottomMargin {
+    for (MASConstraint *constraint in self.btnBottomConstraintsArr) {
+        [constraint setOffset:-menuItemBottomMargin];
+    }
+}
+
+- (void)setMenuItemTopMargin:(CGFloat)menuItemTopMargin {
+    for (MASConstraint *constraint in self.btnTopConstraintsArr) {
+        [constraint setOffset:menuItemTopMargin];
+    }
+}
+
+- (void)setLineColor:(UIColor *)lineColor {
+    self.bottomLine.backgroundColor = lineColor;
 }
 
 #pragma mark - Dealloc

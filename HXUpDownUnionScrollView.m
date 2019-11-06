@@ -93,13 +93,18 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     if ([self.hxdelegate respondsToSelector:@selector(upDownUnionScrollView:gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:)]) {
         return [self.hxdelegate upDownUnionScrollView:self gestureRecognizer:gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:otherGestureRecognizer];
     }
-    if ([gestureRecognizer isKindOfClass:UIPanGestureRecognizer.class] &&
-        [otherGestureRecognizer isKindOfClass:UIPanGestureRecognizer.class])
-    {
-        CGPoint velocity = [(UIPanGestureRecognizer *)gestureRecognizer velocityInView:gestureRecognizer.view];
-        // 判断是否垂直滚动
-        BOOL isVerticalScroll = ABS(velocity.y) * 0.5 >= ABS(velocity.x);
-        return  isVerticalScroll;
+    
+    if ([otherGestureRecognizer.view isKindOfClass:[UICollectionView class]]) {
+        UICollectionView *collectionView = otherGestureRecognizer.view;
+        UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)collectionView.collectionViewLayout;
+        
+        if ([layout respondsToSelector:@selector(scrollDirection)]) {
+            if (layout.scrollDirection == UICollectionViewScrollDirectionHorizontal) {
+                return NO;
+            }
+            
+        }
+        
     }
     
     return YES;
@@ -426,6 +431,11 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 {
     UIViewController *vc = [self getVCAtIndex:indexPath.item];
     UIScrollView     *scrollview = [self getScrollViewAtIndex:indexPath.item];
+    UIView     *containerView;
+    if ([self.hxdataSource respondsToSelector:@selector(containerViewForScrollViewInUpDownUnionScrollView:viewAtIndex:)]) {
+        containerView = [self.hxdataSource containerViewForScrollViewInUpDownUnionScrollView:self viewAtIndex:indexPath.item];
+    }
+    
     
     
     NSString *identifier = [NSString stringWithFormat:@"%@item_%@",kPagingCellIdentifier, @(indexPath.item)];
@@ -443,6 +453,13 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
                 make.edges.equalTo(cell.contentView);
             }];
             vc.view.tag = kCellTag;
+        }
+        else if (containerView) {
+            [cell.contentView addSubview:containerView];
+            [containerView mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.edges.equalTo(cell.contentView);
+            }];
+            containerView.tag = kCellTag;
         }
         else {
             [cell.contentView addSubview:scrollview];
@@ -596,7 +613,7 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
             sliderHeight = [self.hxdataSource sliderHeightMarginInUpDownUnionScrollView:self];
         }
         
-        CGFloat sliderBottomMargin = 2;
+        CGFloat sliderBottomMargin = 0;
         if ([self.hxdataSource respondsToSelector:@selector(sliderBottomMarginInUpDownUnionScrollView:)]) {
             sliderBottomMargin = [self.hxdataSource sliderHeightMarginInUpDownUnionScrollView:self];
         }
@@ -628,6 +645,19 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         menuView.hiddenBottomLine   = hiddenBottomLine;
         menuView.delegate           = self;
         _menuView                   = menuView;
+        
+        if ([self.hxdataSource respondsToSelector:@selector(menuItemsTopMarginInUpDownUnionScrollView:)]) {
+            menuView.menuItemTopMargin = [self.hxdataSource menuItemsTopMarginInUpDownUnionScrollView:self];
+        }
+        
+        if ([self.hxdataSource respondsToSelector:@selector(menuItemsBottomMarginInUpDownUnionScrollView:)]) {
+            menuView.menuItemBottomMargin = [self.hxdataSource menuItemsBottomMarginInUpDownUnionScrollView:self];
+        }
+        
+        if ([self.hxdataSource respondsToSelector:@selector(menuBottomLineColorInUpDownUnionScrollView:)]) {
+            menuView.lineColor = [self.hxdataSource menuBottomLineColorInUpDownUnionScrollView:self];
+        }
+        
     }
     return _menuView;
 }
@@ -644,6 +674,10 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         _viewDataSourceArr = [[NSMutableArray alloc] init];
     }
     return _viewDataSourceArr;
+}
+
+- (UIPanGestureRecognizer *)horizontalCollectionViewGesture {
+    return self.horizontalCollectionView.panGestureRecognizer;
 }
 
 #pragma mark - Dealloc

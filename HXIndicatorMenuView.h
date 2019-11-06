@@ -20,8 +20,18 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL        hiddenBottomLine;
 @property (nonatomic, assign) CGFloat     sliderCornerRadius;
 
-//default 2
+//default 0
 @property (nonatomic, assign) CGFloat     sliderBottomMargin;
+
+//default 0
+@property (nonatomic, assign) CGFloat     menuItemBottomMargin;
+
+//default 0
+@property (nonatomic, assign) CGFloat     menuItemTopMargin;
+
+
+@property (nonatomic, strong) UIColor  *lineColor;
+
 
 @property (nonatomic, assign) SliderStyle sliderStyle;
 @property (nonatomic, weak) id<HXIndicatorMenuViewDelegate> delegate;
