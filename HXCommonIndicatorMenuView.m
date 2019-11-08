@@ -65,6 +65,8 @@
 
 #pragma mark - System Method
 
+
+
 #pragma mark - Public Method
 - (void)reload {
     [self _setupDefaultConfig];
@@ -380,11 +382,13 @@
         targetCellOriginX += self.interitemSpacing;
     }
     
+    CGRect targetFrame = self.sliderView.frame;
+    
     if (self.sliderStyle == SliderStyleEqualMenuItem) {
         self.sliderWidth = targetCellWidth;
+        targetFrame.size.width = self.sliderWidth;
     }
     
-    CGRect targetFrame = self.sliderView.frame;
     targetFrame.origin.x = targetCellOriginX- (self.sliderWidth - targetCellWidth)/2;
     self.sliderView.frame = targetFrame;
 }

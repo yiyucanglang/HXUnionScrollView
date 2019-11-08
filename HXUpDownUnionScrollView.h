@@ -49,8 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)scrollToIndex:(NSInteger)pageIndex
              animated:(BOOL)animated;
 
-- (void)allowHorizaontalScrollEnabled:(BOOL)scrollEnabled;
-
 - (void)menuScrollToTop:(BOOL)animated;
 
 - (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated;

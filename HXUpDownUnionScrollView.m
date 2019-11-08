@@ -28,7 +28,7 @@ static void *HXUnionScrollViewContentOffsetContext = &HXUnionScrollViewContentOf
 static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFrameContext;
 
 @interface HXUnionTableView : UITableView
-@property (nonatomic, strong) id  unionDelegate;
+@property (nonatomic, weak) id  unionDelegate;
 
 @end
 
@@ -76,8 +76,6 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 @property (nonatomic, assign) NSInteger           quickSwipeBeginPageIndex;
 @property (nonatomic, strong) NSMutableArray *scrollViewsArr;
 
-@property (nonatomic, strong) NSMutableArray *viewDataSourceArr;
-
 @property (nonatomic, weak) UIViewController *associatedVC;
 
 @property (nonatomic, assign) CGFloat customHoverTopMargin;
@@ -108,8 +106,6 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         if ([self.hxdataSource respondsToSelector:@selector(customHoverTopMarginInUpDownUnionScrollView:)]) {
             self.customHoverTopMargin = MAX(0, [self.hxdataSource customHoverTopMarginInUpDownUnionScrollView:self]);
         }
-        [self _storeViewData];
-        [self addScrollViewsObserver];
     }
     return self;
 }
@@ -151,33 +147,19 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     }
 }
 
-//- (void)willMoveToSuperview:(UIView *)newSuperview {
-//    if (newSuperview) {
-//
-//        [self createHeaderView];
-//        if (self.outerHighPriorityGestureRecognizer) {
-//            [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:self.outerHighPriorityGestureRecognizer];
-//        }
-//        else {
-//            UIGestureRecognizer *defautGesture = self.associatedVC.navigationController.interactivePopGestureRecognizer;
-//            self.outerHighPriorityGestureRecognizer = defautGesture;
-//            if (defautGesture) {
-//                [self.horizontalCollectionView.panGestureRecognizer requireGestureRecognizerToFail:defautGesture];
-//            }
-//
-//        }
-//    }
-//}
-
-
-- (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated {
-    if (contentOffset.y <= self._criticlalOffset) {
-        [self resetSubScrollViewsContentOffset];
+- (void)layoutSubviews {
+    
+    
+    if (self.mainTableView.frame.size.width != 0 && !self.mainTableView.frame.size.width != self.frame.size.width) {//不支持宽度变化重新布局
+        return;
     }
     
-    [self.mainTableView setContentOffset:contentOffset animated:animated];
+    [super layoutSubviews];
+    [self.mainTableView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.center.equalTo(self);
+        make.size.mas_equalTo(self.mainTableView.frame.size);
+    }];
 }
-
 
 #pragma mark - Public Method
 - (void)scrollToIndex:(NSInteger)pageIndex animated:(BOOL)animated {
@@ -197,8 +179,13 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     [self setContentOffset:CGPointMake(0, self._criticlalOffset) animated:animated];
 }
 
-- (void)allowHorizaontalScrollEnabled:(BOOL)scrollEnabled {
-    self.horizontalCollectionView.scrollEnabled = scrollEnabled;
+
+- (void)setContentOffset:(CGPoint)contentOffset animated:(BOOL)animated {
+    if (contentOffset.y <= self._criticlalOffset) {
+        [self resetSubScrollViewsContentOffset];
+    }
+    
+    [self.mainTableView setContentOffset:contentOffset animated:animated];
 }
 
 #pragma mark - Private Method
@@ -219,28 +206,15 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     }
 }
 
-- (void)_storeViewData {
-    NSInteger num = [self.hxdataSource numberOfViewInUpDownUnionScrollView:self];
-    for (NSInteger i = 0; i < num; i++) {
-        
-        NSMutableDictionary *dic = [NSMutableDictionary dictionary];
-        [self.viewDataSourceArr addObject:dic];
-        if ([self.hxdataSource respondsToSelector:@selector(viewControllerInUpDownUnionScrollView:viewAtIndex:)]) {
-            dic[kViewControllerKey] = [self.hxdataSource viewControllerInUpDownUnionScrollView:self viewAtIndex:i];
-        }
-        dic[kScrollViewKey] = [self.hxdataSource coreScrollViewInUpDownUnionScrollView:self viewAtIndex:i];
+
+- (void)observerScrollView:(UIScrollView *)scrollView {
+    if ([self.scrollViewsArr containsObject:scrollView]) {
+        return;
     }
+    [scrollView addObserver:self forKeyPath:NSStringFromSelector(@selector(contentOffset)) options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:&HXHoverPageViewContentOffsetContext];
+    [self.scrollViewsArr addObject:scrollView];
 }
 
-- (void)addScrollViewsObserver {
-    NSInteger num = [self.hxdataSource numberOfViewInUpDownUnionScrollView:self];
-    for (NSInteger i = 0; i < num; i++) {
-        UIScrollView *view = [self.hxdataSource coreScrollViewInUpDownUnionScrollView:self viewAtIndex:i];
-        [view addObserver:self forKeyPath:NSStringFromSelector(@selector(contentOffset)) options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:&HXHoverPageViewContentOffsetContext];
-        [self.scrollViewsArr addObject:view];
-    }
-    
-}
 
 - (void)removeScrollViewsObserver {
     for (NSInteger i = 0; i < self.scrollViewsArr.count; i++) {
@@ -302,14 +276,22 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
     }
 }
 
-- (UIViewController *)getVCAtIndex:(NSInteger)index {
-    NSDictionary *dic = self.viewDataSourceArr[index];
-    return dic[kViewControllerKey];
+- (UIViewController *)_getVCAtIndex:(NSInteger)index {
+    if ([self.hxdataSource respondsToSelector:@selector(viewControllerInUpDownUnionScrollView:viewAtIndex:)]) {
+        return [self.hxdataSource viewControllerInUpDownUnionScrollView:self viewAtIndex:index];
+    }
+    return nil;
 }
 
-- (UIScrollView *)getScrollViewAtIndex:(NSInteger)index {
-    NSDictionary *dic = self.viewDataSourceArr[index];
-    return dic[kScrollViewKey];
+- (UIScrollView *)_getScrollViewAtIndex:(NSInteger)index {
+    return [self.hxdataSource coreScrollViewInUpDownUnionScrollView:self viewAtIndex:index];
+}
+
+- (UIView *)_getContainerViewAtIndex:(NSInteger)index {
+    if ([self.hxdataSource respondsToSelector:@selector(containerViewForScrollViewInUpDownUnionScrollView:viewAtIndex:viewAtIndex:)]) {
+        return [self.hxdataSource containerViewForScrollViewInUpDownUnionScrollView:self viewAtIndex:index];
+    }
+    return nil;
 }
 
 #pragma mark - Delegate
@@ -334,7 +316,7 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return self.bounds.size.height - [self.hxdataSource menuHeightInUpDownUnionScrollView:self] - self.customHoverTopMargin;
+    return tableView.frame.size.height - [self.hxdataSource menuHeightInUpDownUnionScrollView:self] - self.customHoverTopMargin;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
@@ -397,13 +379,11 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    UIViewController *vc = [self getVCAtIndex:indexPath.item];
-    UIScrollView     *scrollview = [self getScrollViewAtIndex:indexPath.item];
-    UIView     *containerView;
-    if ([self.hxdataSource respondsToSelector:@selector(containerViewForScrollViewInUpDownUnionScrollView:viewAtIndex:)]) {
-        containerView = [self.hxdataSource containerViewForScrollViewInUpDownUnionScrollView:self viewAtIndex:indexPath.item];
-    }
+    UIViewController *vc = [self _getVCAtIndex:indexPath.item];
+    UIScrollView     *scrollview = [self _getScrollViewAtIndex:indexPath.item];
+    UIView     *containerView = [self _getContainerViewAtIndex:indexPath.item];
     
+    [self observerScrollView:scrollview];
     
     
     NSString *identifier = [NSString stringWithFormat:@"%@item_%@",kPagingCellIdentifier, @(indexPath.item)];
@@ -455,6 +435,7 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 }
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+    
     return collectionView.frame.size;
 }
 
@@ -485,14 +466,14 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         }
         
         if (![self.associatedVC shouldAutomaticallyForwardAppearanceMethods]) {
-            UIViewController *appearVC = [self getVCAtIndex:index];
+            UIViewController *appearVC = [self _getVCAtIndex:index];
             if (appearVC) {
                 [appearVC beginAppearanceTransition:YES animated:YES];
             }
             
             
             NSInteger disappearIndex = self.quickSwipeBeginPageIndex >= 0 ? self.quickSwipeBeginPageIndex : oldPageIndex;
-            UIViewController *disappearVC = [self getVCAtIndex:disappearIndex];
+            UIViewController *disappearVC = [self _getVCAtIndex:disappearIndex];
             [disappearVC beginAppearanceTransition:NO animated:YES];
             
             [appearVC endAppearanceTransition];
@@ -649,17 +630,6 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         _scrollViewsArr = [[NSMutableArray alloc] init];
     }
     return _scrollViewsArr;
-}
-
-- (NSMutableArray *)viewDataSourceArr {
-    if (!_viewDataSourceArr) {
-        _viewDataSourceArr = [[NSMutableArray alloc] init];
-    }
-    return _viewDataSourceArr;
-}
-
-- (UIPanGestureRecognizer *)horizontalCollectionViewGesture {
-    return self.horizontalCollectionView.panGestureRecognizer;
 }
 
 #pragma mark - Dealloc
