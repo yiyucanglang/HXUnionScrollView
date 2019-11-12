@@ -288,7 +288,7 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
 }
 
 - (UIView *)_getContainerViewAtIndex:(NSInteger)index {
-    if ([self.hxdataSource respondsToSelector:@selector(containerViewForScrollViewInUpDownUnionScrollView:viewAtIndex:viewAtIndex:)]) {
+    if ([self.hxdataSource respondsToSelector:@selector(containerViewForScrollViewInUpDownUnionScrollView:viewAtIndex:)]) {
         return [self.hxdataSource containerViewForScrollViewInUpDownUnionScrollView:self viewAtIndex:index];
     }
     return nil;
