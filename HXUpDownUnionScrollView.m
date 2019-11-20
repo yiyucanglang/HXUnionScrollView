@@ -308,7 +308,9 @@ static void *HXUpDownUnionScrollViewtFrameContext = &HXUpDownUnionScrollViewtFra
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         [cell.contentView addSubview:self.horizontalCollectionView];
         [self.horizontalCollectionView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.edges.equalTo(cell.contentView);
+            make.center.equalTo(cell.contentView);
+            make.width.equalTo(@(tableView.frame.size.width));
+            make.height.equalTo(cell.contentView);
         }];
     }
     
