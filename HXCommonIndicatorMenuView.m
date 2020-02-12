@@ -36,7 +36,7 @@
 @property (nonatomic, strong) UIFont         *btnFont;
 
 @property (nonatomic, assign) CGFloat   edgeInsetRight;
-@property (nonatomic, assign) CGFloat   menuItemScaleFacor;
+@property (nonatomic, assign) CGFloat   menuItemScaleFactor;
 @property (nonatomic, assign) CGFloat   edgeInsetLeft;
 @property (nonatomic, assign) CGFloat   interitemSpacing;
 @property (nonatomic, assign) CGFloat   mininumMenuItemWidth;
@@ -98,11 +98,8 @@
         self.sliderBottomMargin = [self.menuDataSource sliderBottomMarginInHXCommonIndicatorMenuView:self];
     }
     
-    if ([self.menuDataSource respondsToSelector:@selector(menuItemScaleFacorInHXCommonIndicatorMenuView:)]) {
-        self.menuItemScaleFacor = [self.menuDataSource menuItemScaleFacorInHXCommonIndicatorMenuView:self];
-    }
-    if ([self.menuDataSource respondsToSelector:@selector(menuItemScaleFacorInHXCommonIndicatorMenuView:)]) {
-        self.menuItemScaleFacor = [self.menuDataSource menuItemScaleFacorInHXCommonIndicatorMenuView:self];
+    if ([self.menuDataSource respondsToSelector:@selector(menuItemScaleFactorInHXCommonIndicatorMenuView:)]) {
+        self.menuItemScaleFactor = [self.menuDataSource menuItemScaleFactorInHXCommonIndicatorMenuView:self];
     }
     if ([self.menuDataSource respondsToSelector:@selector(edgeInsetLeftInHXCommonIndicatorMenuView:)]) {
         self.edgeInsetLeft = [self.menuDataSource edgeInsetLeftInHXCommonIndicatorMenuView:self];
@@ -111,7 +108,7 @@
         self.edgeInsetRight = [self.menuDataSource edgeInsetRightInHXCommonIndicatorMenuView:self];
     }
     if ([self.menuDataSource respondsToSelector:@selector(interitemSpacingInHXCommonIndicatorMenuView:)]) {
-        self.edgeInsetRight = [self.menuDataSource interitemSpacingInHXCommonIndicatorMenuView:self];
+        self.interitemSpacing = [self.menuDataSource interitemSpacingInHXCommonIndicatorMenuView:self];
     }
     
     if ([self.menuDataSource respondsToSelector:@selector(layoutStyleInHXCommonIndicatorMenuView:)]) {
@@ -138,7 +135,7 @@
             model.selected = YES;
         }
         model.viewClassName = self.customMenuItemViewClassStr;
-        model.scale = self.menuItemScaleFacor;
+        model.scale = self.menuItemScaleFactor;
         model.viewHeight = self.frame.size.height;
         model.mininumWidth = self.mininumMenuItemWidth;
         model.delegate = (id<HXConvenientViewDelegate>)self;
@@ -281,25 +278,25 @@
     if (leftModel.selected) {
         
         UIColor *color = [self hx_middleColorWithFromColor:self.selectColor toColor:self.normalColor percent:ratio];
-        CGFloat scale = [self scaleInterpolationFrom:self.menuItemScaleFacor to:1 percent:ratio];
+        CGFloat scale = [self scaleInterpolationFrom:self.menuItemScaleFactor to:1 percent:ratio];
         
         [leftItemView updateColor:color scale:scale];
         
     }else {
         UIColor *color = [self hx_middleColorWithFromColor:self.selectColor toColor:self.normalColor percent:ratio];
-        CGFloat scale = [self scaleInterpolationFrom:self.menuItemScaleFacor to:1 percent:ratio];
+        CGFloat scale = [self scaleInterpolationFrom:self.menuItemScaleFactor to:1 percent:ratio];
         [leftItemView updateColor:color scale:scale];
     }
     
     if (rightModel.selected) {
         
         UIColor *color = [self hx_middleColorWithFromColor:self.normalColor toColor:self.selectColor percent:ratio];
-        CGFloat scale = [self scaleInterpolationFrom:1 to:self.menuItemScaleFacor percent:ratio];
+        CGFloat scale = [self scaleInterpolationFrom:1 to:self.menuItemScaleFactor percent:ratio];
         [rightItemView updateColor:color scale:scale];
         
     }else {
         UIColor *color = [self hx_middleColorWithFromColor:self.normalColor toColor:self.selectColor percent:ratio];
-        CGFloat scale = [self scaleInterpolationFrom:1 to:self.menuItemScaleFacor percent:ratio];
+        CGFloat scale = [self scaleInterpolationFrom:1 to:self.menuItemScaleFactor percent:ratio];
         [rightItemView updateColor:color scale:scale];
     }
     
@@ -364,7 +361,7 @@
     self.sliderBottomMargin = 0;
     self.sliderWidth = 44;
     self.sliderCornerRadius = 1;
-    self.menuItemScaleFacor = 1.0;
+    self.menuItemScaleFactor = 1.0;
     self.edgeInsetLeft = 15;
     self.edgeInsetRight = 15;
     self.interitemSpacing = 12;
@@ -395,7 +392,7 @@
 
 - (CGFloat)scaleInterpolationFrom:(CGFloat)from to:(CGFloat)to percent:(CGFloat)percent
 {
-    percent = MAX(0, MIN(self.menuItemScaleFacor, percent));
+    percent = MAX(0, MIN(self.menuItemScaleFactor, percent));
     return from + (to - from)*percent;
 }
 

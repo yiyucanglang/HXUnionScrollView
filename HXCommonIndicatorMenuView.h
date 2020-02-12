@@ -54,7 +54,7 @@ typedef NS_ENUM(NSInteger, HXIndicatorMenuLayoutStyle) {
 - (CGFloat)interitemSpacingInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
 
 //default 1.0(no scale)
-- (CGFloat)menuItemScaleFacorInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
+- (CGFloat)menuItemScaleFactorInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
 
 //default black
 - (UIColor *)normalColorInHXCommonIndicatorMenuView:(HXCommonIndicatorMenuView *)menuView;
